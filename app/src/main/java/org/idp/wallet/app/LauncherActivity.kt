@@ -1,7 +1,11 @@
 package org.idp.wallet.app
 
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -11,12 +15,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
+import com.google.firebase.messaging.FirebaseMessaging
 import java.util.UUID
 import org.idp.wallet.verifiable_credentials_library.VerifiableCredentialsClient
 import org.idp.wallet.verifiable_credentials_library.domain.configuration.WalletConfiguration
@@ -32,6 +39,19 @@ class LauncherActivity : FragmentActivity() {
     super.onCreate(savedInstanceState)
     setContent { LauncherView(viewModel = viewModel, onClick = { login() }) }
     VerifiableCredentialsClient.initialize(this, WalletConfiguration(issuer = "vc-wallet"))
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+          ActivityCompat.requestPermissions(
+              this,
+              arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+              1001
+          )
+      }
+      FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+          if (task.isSuccessful) {
+              val token = task.result
+              Log.d("FCM_TOKEN", token)
+          }
+      }
     login()
   }
 
